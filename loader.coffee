@@ -51,7 +51,9 @@ Loader =
     save_data p, filename
   require_remote: (url) ->
     raw_download(url).then (data) ->
-      eval data
-      Promise.resolve data
+      new Promise((f) ->
+        eval data
+        f data
+      )
 
 module.exports = Loader

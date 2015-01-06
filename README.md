@@ -1,6 +1,8 @@
 Unicrawler Client
 ======
 
+[![Build Status](https://travis-ci.org/bestmike007/unicrawler.svg?branch=master)](https://travis-ci.org/bestmike007/unicrawler)
+
 Several ways to use unicrawler:
 
 + phantomjs --output-encoding=gbk main.coffee --config=examples/ip138-config --ip=8.8.8.8

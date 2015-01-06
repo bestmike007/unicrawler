@@ -17,5 +17,4 @@ run = (context, config) ->
     f context
   )
 
-module.exports =
-  run: run
+module.exports = run: run

@@ -1,6 +1,12 @@
 Unicrawler Client
 ======
 
+Several ways to use unicrawler:
+
++ phantomjs --output-encoding=gbk main.coffee --config=examples/ip138-config --ip=8.8.8.8
++ phantomjs main.coffee --file=examples/run-file.coffee
++ phantomjs main.coffee test
+
 ## Task configuration protocol with examples
 
 Task configuration is represented as JSON object/array/function strings:

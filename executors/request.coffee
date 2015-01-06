@@ -1,6 +1,6 @@
-open_url: (context, url) ->
-  return promise.post context, url
-post: (context, url, data) ->
+open_url = (context, url) ->
+  return post context, url
+post = (context, url, data) ->
   if url is `undefined`
     return new Promise((f, r) ->
       r(new Error("You must specify the url."))
@@ -15,5 +15,4 @@ post: (context, url, data) ->
 run = (context, config) ->
   return if config.data is `undefined` then open_url(context, config.url) else post(context, config.url, config.data)
 
-module.exports =
-  run: run
+module.exports = run: run

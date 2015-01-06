@@ -32,5 +32,4 @@ run = (context, config) ->
     if rs.err then r new Error rs.err.message else f context
   )
 
-module.exports =
-  run: run
+module.exports = run: run

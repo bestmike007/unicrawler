@@ -84,8 +84,9 @@ promise = me.promise =
     return new Promise((f, r) ->
       p = Promise.resolve(context)
       for _step in step
-        ((step)->
-          p = p.then(-> promise.run_any context, step)
+        ((step) ->
+          p = p.then ->
+            promise.run_any context, step
         )(_step)
       p = p.then(->
           f context
@@ -94,14 +95,13 @@ promise = me.promise =
       )
     )
   run_object: (context, step) ->
-    step.type ||= "extract" # default type is extract.
-    sub_executor = null
+    # step.type ||= "extract" # default type is extract.
+    # sub_executor = null
     try
-      sub_executor = require "./executors/#{step.type}"
-      sub_executor.run context, step
+      return require("./executors/#{step.type || "extract"}").run(context, step)
     catch e
       return new Promise((f, r) ->
-        r new Error("Invalid config type #{step.type} or failed to execute, error message: #{e.toString()}.")
+        r new Error("Invalid config type #{step.type} or failed to execute, error message: #{e.toString()}\n#{e.stack}")
       )
 
   run_function: (context, step) ->

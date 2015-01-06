@@ -14,5 +14,4 @@ run = (context, config) ->
         else
           r new Error("Unable to find #{config.selector}.")
 
-module.exports =
-  run: run
+module.exports = run: run

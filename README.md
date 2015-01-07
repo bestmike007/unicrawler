@@ -12,6 +12,7 @@ Several ways to use unicrawler:
 ## Task configuration protocol with examples
 
 Task configuration is represented as JSON object/array/function strings:
+
 - JSON array: sequential list of configurations (object/array/function)
 - JavaScript function: a function to modify results according to results from previous configurations and task arguments
 - JSON Object: single action including extract, fire event, interact, wait for element, raw http get or post, execute script in browser
@@ -19,6 +20,7 @@ Task configuration is represented as JSON object/array/function strings:
 ### JSON object crawler configuration
 
 Types of configuration:
+
 - extract: extract information from current page DOM tree
 - event: fire events, e.g. click, type, keypress, etc.
 - interact: raw mouse/keyboard interaction
@@ -219,3 +221,14 @@ __Search in baidu__
   }
 ]
 ```
+
+### Credits
+
+All credit goes to the projects below that make unicrawler possible:
+
++ [PhantomJS](http://phantomjs.org/) - PhantomJS is a headless WebKit scriptable with a JavaScript API.
++ [ES5-shim](https://github.com/es-shims/es5-shim) - ECMAScript 5 compatibility shims for legacy JavaScript engines.
++ [Promise.js](https://github.com/then/promise) - Bare bones Promises/A+ implementation
++ [Sizzle.js](http://sizzlejs.com/) - A sizzlin' hot selector engine.
+ 
+Project maintained by [![bestmike007](https://avatars3.githubusercontent.com/u/432106?v=3&s=20) bestmike007](https://github.com/bestmike007)

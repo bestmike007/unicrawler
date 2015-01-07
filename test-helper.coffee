@@ -53,6 +53,19 @@ window.be = window.eq = (expected) ->
     compare: (actual) ->
       expected == actual
   }
+
+window.be_a = window.be_an = (expected) ->
+  return if typeof expected == 'string' then {
+    expected: expected
+    operator: "be typeof"
+    compare: (actual) ->
+      typeof actual == expected
+  } else {
+    expected: expected
+    operator: "be instanceof"
+    compare: (actual) ->
+      actual instanceof expected
+  }
 window.gt = (expected) ->
   return {
     expected: expected
@@ -121,6 +134,12 @@ runTests = ->
       file: file
       cases: []
     window.test = (desc, func) ->
+      if arguments.length == 1 && typeof desc == 'function'
+        func = desc
+        desc = "Test case ##{caseCount + 1}"
+      unless typeof func == 'function'
+        logger.error "Unvalid test case from #{file}"
+        phantom.exit -1
       caseCount++
       suit.cases.push {
         desc: desc

@@ -1,6 +1,8 @@
 phantom.injectJs './premise.coffee'
 fs = require 'fs'
 system = require 'system'
+factory = require './webpage-factory'
+executor = require './executor'
 
 # gloabl function for test cases.
 window.expect = (actual) ->
@@ -36,7 +38,7 @@ window.expect = (actual) ->
       if typeof(op) == 'function'
         throw "\tExpected `#{actual}` to pass validation #{op.toString()} but failed"
       else
-        throw "\tExpected:\t#{if not_to then 'not ' else ''}to #{op.operator} #{op.expected}\n\tGot:     \t#{actual}"
+        throw "\tExpected:\t#{if not_to then 'not ' else ''}to #{op.operator} `#{op.expected}`\n\tGot:     \t`#{actual}`"
   return {
     not_to: (op) ->
       compare op, true
@@ -47,7 +49,7 @@ window.expect = (actual) ->
 window.be = window.eq = (expected) ->
   return {
     expected: expected
-    operator: "=="
+    operator: "equal"
     compare: (actual) ->
       expected == actual
   }
@@ -92,6 +94,21 @@ window.error = (expected) ->
     expected: expected
     operator: "error"
   }
+window.run_executor = (config, args, profile, expecting) ->
+  if arguments.length == 2 && typeof args == 'function'
+    expecting = args
+    args = null
+  else if arguments.length == 3 && typeof profile == 'function'
+    expecting = profile
+    profile = undefined
+  new Promise (f, r) ->
+    page = factory.createPage(profile)
+    executor.run page, config, args, (result) ->
+      try
+        page.close()
+        f expecting(result)
+      catch e
+        r e
 
 runTests = ->
   logger.info "Start running all tests..."
@@ -113,29 +130,38 @@ runTests = ->
     delete window.test
     return suit
   logger.info "#{suits.length} test files loaded, total #{caseCount} test cases."
-  # Run all test cases
+  # Run all test cases streamlined with Promise
   failures = []
+  proc = Promise.resolve(0)
   suits.map (test_suit) ->
     test_suit.cases.map (test_case) ->
-      try
-        test_case.func()
+      proc = proc.then(->
+        p = test_case.func()
+        return if p instanceof Promise then p else Promise.resolve(true)
+      ).then(->
         system.stdout.write('.')
-      catch e
+      , (e) ->
         system.stdout.write('F')
         failures.push {
-          suit: test_suit
-          case: test_case
+          test_suit: test_suit
+          test_case: test_case
           error: e.toString()
         }
-  console.log('\tDONE')
-  # Print test failures if any
-  failures.map (failure) ->
+      )
+  proc.then(->
+    console.log('\tDONE')
+    # Print test failures if any
+    failures.map (failure) ->
+      console.log "=============================================="
+      console.log "Failure (Test suit: `#{failure.test_suit.file}`, Test case: `#{failure.test_case.desc}`)"
+      console.log failure.error
+    # Print summary
     console.log "=============================================="
-    console.log "Failure (Test suit: `#{failure.suit.file}`, Test case: `#{failure.case.desc}`)"
-    console.log failure.error
-  # Print summary
-  console.log "=============================================="
-  console.log "Total: #{caseCount} / Failure: #{failures.length}"
-  phantom.exit failures.length
+    console.log "Total: #{caseCount} / Failure: #{failures.length}"
+    phantom.exit failures.length
+  , (e) ->
+    logger.error "Unexpected error: #{e}"
+    phantom.exit -1
+  )
 
 module.exports = run: runTests

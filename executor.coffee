@@ -24,6 +24,7 @@ me = module.exports =
       args: task_params
       result: {}
       debug: !!task_params.debug
+      run_config: promise.run_any
     context.result.debug = [] if context.debug
     context.log = (msg) ->
       logger.debug msg

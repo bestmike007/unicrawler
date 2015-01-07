@@ -3,6 +3,16 @@
 factory = require './webpage-factory'
 executor = require './executor'
 
+new Promise((f, r)->
+  r "??"
+).then(->
+  logger.info "OK"
+, ->
+  logger.info "Error"
+).then(->
+  logger.info "Finally"
+)
+
 logger.info new Date
 page = factory.createPage()
 

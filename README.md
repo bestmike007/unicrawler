@@ -219,3 +219,14 @@ __Search in baidu__
   }
 ]
 ```
+
+### Credits
+
+All credit goes to the projects below that make unicrawler possible:
+
++ [PhantomJS](http://phantomjs.org/) - PhantomJS is a headless WebKit scriptable with a JavaScript API.
++ [ES5-shim](https://github.com/es-shims/es5-shim) - ECMAScript 5 compatibility shims for legacy JavaScript engines.
++ [Promise.js](https://github.com/then/promise) - Bare bones Promises/A+ implementation
++ [Sizzle.js](http://sizzlejs.com/) - A sizzlin' hot selector engine.
+ 
+Project maintained by [![bestmike007](https://avatars3.githubusercontent.com/u/432106?v=3&s=20) bestmike007](https://github.com/bestmike007)

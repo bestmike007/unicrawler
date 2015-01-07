@@ -10,7 +10,7 @@ run = (context, config) ->
           if typeof config.fallback is 'boolean'
             f context
           else
-            promise.run_any(context, config.fallback).then(f, r)
+            context.run_config(context, config.fallback).then(f, r)
         else
           r new Error("Unable to find #{config.selector}.")
 

@@ -5,6 +5,9 @@ if !window.Promise
   phantom.injectJs './lib/es5-shim.min.js'
   phantom.injectJs './lib/promise-4.0.0.js'
   system = require 'system'
+  fs = require('fs')
+  window.include = (file) ->
+    phantom.injectJs fs.absolute("#{phantom.libraryPath}/#{file}")
 
   window.$args = (->
     options = {}

@@ -27,3 +27,6 @@ if !window.Promise
     logger.warn "Uncatched error: #{JSON.stringify msg}, Stack: #{JSON.stringify err}"
 
   window.helpers = require './helpers'
+  
+  if fs.isFile("./config.coffee")
+    phantom.injectJs "./config.coffee"

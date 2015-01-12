@@ -26,6 +26,8 @@ else if $args.file
     phantom.injectJs $args.file
   else
     phantom.injectJs './' + $args.file
+else if $args.endpoint
+  phantom.injectJs './client.coffee'
 else
   logger.info "View https://github.com/bestmike007/unicrawler for usage."
   phantom.exit 0

@@ -62,7 +62,7 @@ ConfigLoader = (->
         selector: 'pre'
       ,
         selector: 'pre'
-        extract: 'html'
+        extract: 'text'
         name: 'config'
       ]
       executor.run page, config, {}, (result) ->
@@ -169,7 +169,7 @@ TaskAgent = (->
       selector: 'pre'
     ,
       selector: 'pre'
-      extract: 'html'
+      extract: 'text'
       name: 'task'
     ]
     executor.run page, config, {}, (result) ->
@@ -227,7 +227,7 @@ TaskAgent = (->
           selector: 'pre'
         ,
           selector: 'pre'
-          extract: 'html'
+          extract: 'text'
           name: 'task'
         ]
         executor.run _page, config, {}, (result) ->

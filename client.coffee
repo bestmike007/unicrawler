@@ -147,7 +147,7 @@ TaskAgent = (->
       page = factory.createPage('min')
       page.counts = 0
     page.counts++
-    _acl = []
+    _acl = if $args.version then ["+#{$args.version}"] else []
     for k, v of acl
       if (new Date() - v) > 0
         delete acl[k]

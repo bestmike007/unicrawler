@@ -12,6 +12,7 @@ Several ways to use unicrawler:
 ## Task configuration protocol with examples
 
 Task configuration is represented as JSON object/array/function strings:
+
 - JSON array: sequential list of configurations (object/array/function)
 - JavaScript function: a function to modify results according to results from previous configurations and task arguments
 - JSON Object: single action including extract, fire event, interact, wait for element, raw http get or post, execute script in browser
@@ -19,6 +20,7 @@ Task configuration is represented as JSON object/array/function strings:
 ### JSON object crawler configuration
 
 Types of configuration:
+
 - extract: extract information from current page DOM tree
 - event: fire events, e.g. click, type, keypress, etc.
 - interact: raw mouse/keyboard interaction

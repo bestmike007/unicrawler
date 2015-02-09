@@ -2,6 +2,7 @@ phantom.injectJs './premise.coffee'
 
 factory = require './webpage-factory'
 executor = require './executor'
+loader = require './loader'
 
 ###
 The client program communicate with server and pull tasks to execute
@@ -39,206 +40,50 @@ worker_count = Math.max($args.worker || 1, 1) || 1
 endpoint = $args.endpoint
 workers = []
 
-ConfigLoader = (->
-  cached = {}
-  page = null
-  loadConfig = (config_name) ->
-    # use page to load config
-    new Promise (f, r) ->
-      if !page or page.counts > 100
-        page.close()  if page
-        page = factory.createPage('min')
-        page.counts = 0
-      page.counts++
-      config = [
-        type: 'request'
-        url: endpoint
-        data: {
-          op: 'config'
-          config_name: config_name
-        }
-      ,
-        type: 'waitFor'
-        selector: 'pre'
-      ,
-        selector: 'pre'
-        extract: 'text'
-        name: 'config'
-      ]
-      executor.run page, config, {}, (result) ->
-        try
-          return r result.error  if result.error
-          _conf = helpers.parseConfig(result.config)
-          if _conf.block_detection == '' or !_conf.block_detection
-            delete _conf.block_detection
-          else
-            _conf.block_detection = helpers.parseConfig "function(args, result) { #{_conf.block_detection} }"
-          f _conf
-        catch e
-          logger.error "Fail to parse config, error: #{e}, data: #{JSON.stringify result}"
-          f null
-  queue = []
-  handle = ->
-    return  if queue.length == 0
-    request = queue.shift()
-    if cached[request.config_name] and (new Date - cached[request.config_name].load_at) <= 60000
-      setTimeout -> request.f cached[request.config_name].config
-      setTimeout -> handle()
-      return
-    loadConfig(request.config_name).then((config)->
-      cached[request.config_name] =
-        load_at: new Date
-        config: config
-      setTimeout -> request.f config
-      setTimeout -> handle()
-    , (err) ->
-      setTimeout -> request.r err
-      setTimeout -> handle()
-    )
-    return
-  me =
-    getConfig: (config_name) ->
-      delete cached[config_name]  if cached[config_name] and (new Date - cached[config_name].load_at) > 60000
-      return Promise.resolve cached[config_name].config  if cached[config_name]
-      return new Promise (f, r) ->
-        idle = queue.length == 0
-        queue.push (
-          f: f
-          r: r
-          config_name: config_name
-        )
-        if idle
-          setTimeout -> handle()
-    clear: ->
-      cached = {}
-
-  return me
-)()
-
 TaskAgent = (->
   acl = {} # key: rule, value: due to
   submitted = 0
-  queue = []
-  page = null
-  handle = () ->
-    return  if queue.length == 0
-    request = queue.shift()
-    r = (err) ->
-      setTimeout -> request.r err
-      while queue.length > 0
-        (->
-          req = queue.shift()
-          setTimeout -> req.r err
-        )()
-    f = (task) ->
-      if task isnt null
-        setTimeout -> request.f task
-        setTimeout -> handle()
-        return
-      setTimeout -> request.f null
-      while queue.length > 0
-        (->
-          req = queue.shift()
-          setTimeout -> req.f null
-        )()
-    # post endpoint, args: { op: 'get', crawler: crawler_name, worker: worker_id, acl: acl.keys.join(' ') }
-    if !page or page.counts > 100
-      page.close()  if page
-      page = factory.createPage('min')
-      page.counts = 0
-    page.counts++
-    _acl = []
-    for k, v of acl
-      if (new Date() - v) > 0
-        delete acl[k]
-        continue
-      _acl.push k
-    
-    config = [
-      type: 'request'
-      url: endpoint
-      data: {
-        op: 'get'
-        crawler: crawler_name
-        worker: request.worker_id
-        acl: _acl.join(' ')
-        v: $args.version
-      }
-    ,
-      type: 'waitFor'
-      selector: 'pre'
-    ,
-      selector: 'pre'
-      extract: 'text'
-      name: 'task'
-    ]
-    executor.run page, config, {}, (result) ->
-      try
-        return r result.error  if result.error
-        task = helpers.parseConfig(result.task)
-        return f null  if task is null
-        task.args = helpers.parseConfig task.args  if typeof task.args is 'string'
-        if !task.config_name
-          setTimeout -> r new Error "Got invalid task: #{JSON.stringify task}"
-          return
-        f task
-      catch e
-        setTimeout -> r new Error "Fail to parse task, error: #{e}, data: #{JSON.stringify result}"
   me =
     getTask: (worker_id) ->
+      _acl = []
+      for k, v of acl
+        if (new Date() - v) > 0
+          delete acl[k]
+          continue
+        _acl.push k
       # post endpoint, args: { op: 'get', crawler: crawler_name, worker: worker_id, acl: acl.keys.join(' ') }
-      new Promise (f, r) ->
-        idle = queue.length == 0
-        queue.push (
-          f: f
-          r: r
-          worker_id: worker_id
-        )
-        if idle
-          setTimeout -> handle()
+      loader.request(endpoint, JSON.stringify(
+        op: 'get'
+        crawler: crawler_name
+        worker: worker_id
+        acl: _acl.join(' ')
+        v: $args.version
+      )).then((data) ->
+        task = helpers.parseConfig(data)
+        return Promise.resolve(null)  if task is null
+        task.args = helpers.parseConfig task.args  if typeof task.args is 'string'
+        if !task.config_name
+          return Promise.resolve(new Error("Got invalid task: #{JSON.stringify task}"))
+        Promise.resolve(task)
+      )
 
     submitResult: (worker_id, task_id, status, result) ->
-      # due to memory leak issues of phantomjs. Restart the client every 1,000 tasks.
-      submitted++
-      if submitted > 1000
-        for worker in workers
-          worker.stop()
-        return
       # post endpoint, args: { op: 'submit', crawler: crawler_name, worker: worker_id, task_id: task_id, status: status, result: JSON.stringify(result) }
-      new Promise (f, r) ->
-        _page = factory.createPage('min')
-        _acl = []
-        for k, v of acl
-          _acl.push k
-        
-        config = [
-          type: 'request'
-          url: endpoint
-          data: {
-            op: 'submit'
-            crawler: crawler_name
-            worker: worker_id
-            task_id: task_id
-            status: status
-            result: JSON.stringify result
-          }
-        ,
-          type: 'waitFor'
-          selector: 'pre'
-        ,
-          selector: 'pre'
-          extract: 'text'
-          name: 'task'
-        ]
-        executor.run _page, config, {}, (result) ->
-          try
-            _page.close()
-            return r result.error  if result.error
-            f helpers.parseConfig(result.task)
-          catch e
-            logger.error "Fail to parse submit result, error: #{e}, data: #{JSON.stringify result}"
-            f null
-
+      loader.request(endpoint, JSON.stringify(
+        op: 'submit'
+        crawler: crawler_name
+        worker: worker_id
+        task_id: task_id
+        status: status
+        result: JSON.stringify result
+      )).then((data) ->
+        Promise.resolve(helpers.parseConfig(data))
+        # due to memory leak issues of phantomjs. Restart the client every 1,000 tasks.
+        submitted++
+        if submitted > 1000
+          for worker in workers
+            worker.stop()
+      )
     block: (config_name, till) ->
       acl['-' + config_name] = till
       Promise.resolve(config_name)
@@ -262,7 +107,11 @@ startWorker = () ->
           , 1000
       task.args.client_ip = task.client_ip
       logger.debug "Loaded task: #{JSON.stringify task}"
-      ConfigLoader.getConfig(task.config_name)
+      #ConfigLoader.getConfig(task.config_name)
+      loader.request(endpoint, JSON.stringify(
+        op: 'config'
+        config_name: task.config_name
+      )).then((data) -> Promise.resolve(helpers.parseConfig data))
     ).then((config) ->
       context.config = config
       if config is null and context.task isnt null
@@ -322,11 +171,7 @@ new Promise((f) ->
       if !crawler_name
         logger.error "Please specify your crawler name."
         phantom.exit()
-      crawler_name = escape crawler_name
-      f true
-  else
-    crawler_name = escape crawler_name
-    f true
+  f true
 ).then(->
   logger.debug "Starting crawler #{crawler_name} for #{worker_count} worker(s)."
   for i in [0...worker_count]

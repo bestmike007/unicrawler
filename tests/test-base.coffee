@@ -22,3 +22,13 @@ test ->
   expect(->
     "AbC"
   ).not_to match /^[a-z]+$/
+test "toUtf8", ->
+  new Promise((f, r) ->
+    helpers.toUtf8(unescape("%c4%e3%ba%c3"), (result) ->
+      try
+        expect(result).to eq "你好"
+        f true
+      catch e
+        r e
+    )
+  )

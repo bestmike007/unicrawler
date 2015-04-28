@@ -1,5 +1,6 @@
 # use ECMAScript 6.0 Promises to stream line execution.
 phantom.injectJs './premise.coffee'
+Loader = require './loader'
 
 ###
 Use executor.run(page, task_config, task_params, callback) to run a task, where:
@@ -39,10 +40,7 @@ me = module.exports =
           else if typeof context.args.hook is 'string' && context.args.hook.indexOf('function') == 0
             config = eval("(#{context.args.hook})")(context.args, context.result)
           else
-            config = (
-              url: context.args.hook
-              data: JSON.stringify context.result
-            )
+            return Loader.request context.args.hook, JSON.stringify context.result
           config.type = "request"
           return promise.run_any context, config
         return Promise.resolve(context)

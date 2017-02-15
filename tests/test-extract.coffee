@@ -14,11 +14,11 @@ test "Get json file", ->
 
 test "Get github repo name", ->
   run_executor(
-      selector: '.js-current-repository'
+      selector: 'h1.public .author a'
       extract: 'text'
       name: 'repo'
     , url: 'https://github.com/bestmike007/unicrawler', 'min', (result) ->
-      expect(result.repo).to eq 'unicrawler'
+      expect(result.repo).to eq 'bestmike007'
     )
 
 test "Get project page fork me on github image attribute", ->

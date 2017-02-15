@@ -15,8 +15,8 @@ if !window.Promise
       continue if !arg.indexOf('--') == 0
       arg = arg.substring(2)
       (options[arg] = true; continue) if arg.indexOf('=') == -1
-      kv = arg.split '=', 2
-      options[kv[0]] = kv[1]
+      kv = arg.split '=', 1
+      options[kv[0]] = arg.substr(kv[0].length + 1)
     options
   )()
 
@@ -27,6 +27,6 @@ if !window.Promise
     logger.warn "Uncatched error: #{JSON.stringify msg}, Stack: #{JSON.stringify err}"
 
   window.helpers = require './helpers'
-  
+
   if fs.isFile("./config.coffee")
     phantom.injectJs "./config.coffee"
